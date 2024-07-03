@@ -1,0 +1,136 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  go aws lambda
+  
+  Order and Payment Services
+
+Globals:
+  Function:
+    Timeout: 5
+    MemorySize: 128
+
+Resources:
+  # DynamoDB Tables
+  OrdersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Orders
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+
+  PaymentsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: Payments
+      AttributeDefinitions:
+        - AttributeName: PK
+          AttributeType: S
+        - AttributeName: SK
+          AttributeType: S
+      KeySchema:
+        - AttributeName: PK
+          KeyType: HASH
+        - AttributeName: SK
+          KeyType: RANGE
+      BillingMode: PAY_PER_REQUEST
+
+  # SQS Queues
+  OrderQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: OrderQueue
+
+  PaymentQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: PaymentQueue
+
+  # Order Microservice Functions
+  OrderFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: order/
+      Handler: main
+      Runtime: provided.al2
+      Architectures:
+        - x86_64
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:GetItem
+                - dynamodb:UpdateItem
+              Resource: !GetAtt OrdersTable.Arn
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+              Resource:
+                - !GetAtt PaymentQueue.Arn
+      Events:
+        CreateOrder:
+          Type: Api
+          Properties:
+            Path: /order
+            Method: post
+        CompleteOrder:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt OrderQueue.Arn
+      Environment:
+        Variables:
+          ORDERS_TABLE: !Ref OrdersTable
+          PAYMENTS_QUEUE_URL: !GetAtt PaymentQueue.QueueUrl
+
+  # Payment Microservice Functions
+  PaymentFunction:
+    Type: AWS::Serverless::Function
+    Metadata:
+      BuildMethod: go1.x
+    Properties:
+      CodeUri: payment/
+      Handler: main
+      Runtime: provided.al2
+      Architectures:
+        - x86_64
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+                - dynamodb:GetItem
+                - dynamodb:UpdateItem
+              Resource: !GetAtt PaymentsTable.Arn
+            - Effect: Allow
+              Action:
+                - sqs:SendMessage
+              Resource:
+                - !GetAtt OrderQueue.Arn
+      Events:
+        ProcessPayment:
+          Type: Api
+          Properties:
+            Path: /payment
+            Method: post
+        CompletePayment:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt PaymentQueue.Arn
+      Environment:
+        Variables:
+          PAYMENTS_TABLE: !Ref PaymentsTable
+          ORDERS_QUEUE_URL: !GetAtt OrderQueue.QueueUrl

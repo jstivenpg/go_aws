@@ -1,0 +1,91 @@
+{
+	"info": {
+		"_postman_id": "9241aef8-703a-4c04-98e2-f8884136813d",
+		"name": "Challenge App",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "14551431"
+	},
+	"item": [
+		{
+			"name": "createOrder",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"user_id\":\"1111\",\r\n    \"item\":\"2222\",\r\n    \"quantity\":10,\r\n    \"total_price\":100000\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url}}/order",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"order"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "processPayment",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"order_id\":\"5fd1f50c-a651-490c-9310-ec99af34d7ab\",\r\n    \"status\":\"paid\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{url}}/payment",
+					"host": [
+						"{{url}}"
+					],
+					"path": [
+						"payment"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "url",
+			"value": "https://ql0vwmklib.execute-api.us-east-1.amazonaws.com/Prod",
+			"type": "string"
+		}
+	]
+}
